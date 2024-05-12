@@ -1,0 +1,4 @@
+export const USAGE_FEATURE = {
+  MEDITATION: "AE3:AF3000",
+  FC: "AB2:AC2000",
+};
