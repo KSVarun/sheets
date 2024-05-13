@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { BODY_SHEET_ID } from "../constants/global.js";
-import { USAGE_FEATURE } from "../constants/sheetUsageMap.js";
+import { DEFAULT_RANGE, USAGE_FEATURE } from "../constants/sheetUsageMap.js";
 import { googleSheets, auth } from "../utils/global.js";
 
 export async function sheets(fastify) {
@@ -23,20 +23,29 @@ export async function sheets(fastify) {
     //validate if sheet name if more than one word
     function getRanges(sheetName) {
       const ranges = usageFeatures.map((uf) => USAGE_FEATURE[uf.trim()]);
-      return ranges.map((range) => `${sheetName}!${range}`);
+      return [DEFAULT_RANGE, ranges.map((range) => `${sheetName}!${range}`)];
     }
 
     const getRows = await googleSheets.spreadsheets.values.batchGet({
       spreadsheetId: BODY_SHEET_ID,
       ranges: getRanges(request.query.name),
       auth: auth,
+      majorDimension: "COLUMNS",
     });
 
     const result = {};
-    const values = getRows.data.valueRanges.map((vr) => vr.values);
-    usageFeatures.forEach((uf, idx) => {
-      result[uf.trim()] = values[idx];
-    });
+    const values = getRows.data.valueRanges.flatMap((v) => v.values);
+    const dates: string[] = values[0];
+    for (let i = 1; i < values.length; i++) {
+      for (let j = 0; j < values[i].length; j++) {
+        if (j > 0) {
+          result[dates[j]] = {
+            ...result[dates[j]],
+            [values[i][0]]: values[i][j],
+          };
+        }
+      }
+    }
 
     return { result };
   });
