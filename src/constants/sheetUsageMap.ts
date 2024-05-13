@@ -1,4 +1,6 @@
 export const USAGE_FEATURE = {
   MEDITATION: "AE3:AF3000",
   FC: "AB2:AC2000",
+  CARROT: "M2:N2000",
+  BEETROOT: "O2:P2000",
 };
