@@ -1,51 +1,30 @@
-import { google } from "googleapis";
 import { BODY_SHEET_ID } from "../constants/global.js";
-import { DEFAULT_RANGE, USAGE_FEATURE } from "../constants/sheetUsageMap.js";
-import { googleSheets, auth } from "../utils/global.js";
+import {
+  CONFIGURATIONS_RANGE,
+  DEFAULT_RANGE,
+} from "../constants/sheetUsageMap.js";
+import { IResult } from "../types/global.js";
+import { googleSheets, auth, formatData } from "../utils/global.js";
 
 export async function sheets(fastify) {
   fastify.get("/sheets", async (request, reply) => {
-    //bad request if query has empty spaces in it
-    if (!request.query.name && !request.query.usage) {
-      reply
-        .status(400)
-        .send({ error: "name and usage is required in query param" });
-    }
-    if (!request.query.name) {
-      reply.status(400).send({ error: "name is required in query param" });
-    }
-    if (!request.query.usage) {
-      reply.status(400).send({ error: "usage is required in query param" });
-    }
-
-    const usageFeatures = request.query.usage.split(",");
-
-    //validate if sheet name if more than one word
-    function getRanges(sheetName) {
-      const ranges = usageFeatures.map((uf) => USAGE_FEATURE[uf.trim()]);
-      return [DEFAULT_RANGE, ranges.map((range) => `${sheetName}!${range}`)];
-    }
-
-    const getRows = await googleSheets.spreadsheets.values.batchGet({
+    const rows = await googleSheets.spreadsheets.values.batchGet({
       spreadsheetId: BODY_SHEET_ID,
-      ranges: getRanges(request.query.name),
+      ranges: [DEFAULT_RANGE, CONFIGURATIONS_RANGE],
       auth: auth,
       majorDimension: "COLUMNS",
     });
 
-    const result = {};
-    const values = getRows.data.valueRanges.flatMap((v) => v.values);
-    const dates: string[] = values[0];
-    for (let i = 1; i < values.length; i++) {
-      for (let j = 0; j < values[i].length; j++) {
-        if (j > 0) {
-          result[dates[j]] = {
-            ...result[dates[j]],
-            [values[i][0]]: values[i][j],
-          };
-        }
-      }
-    }
+    const result: IResult = {
+      track: {},
+      configurations: {},
+    };
+    const trackerData: string[][] = rows.data.valueRanges[0].values;
+    const configurations: string[][] = rows.data.valueRanges[1].values;
+    const dates: string[] = trackerData[0];
+    const configKeys: string[] = configurations[0];
+    formatData(result, trackerData, dates, "track");
+    formatData(result, configurations, configKeys, "configurations");
 
     return { result };
   });

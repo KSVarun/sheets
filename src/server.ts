@@ -19,7 +19,7 @@ await fastify.register(cors, {
 
 const start = async () => {
   try {
-    await fastify.listen({ port: 8082, host: "0.0.0.0" });
+    await fastify.listen({ port: 8082, host: "192.168.0.107" });
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
