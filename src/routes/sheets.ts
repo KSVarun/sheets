@@ -30,15 +30,20 @@ export async function sheets(fastify) {
   });
 
   fastify.put("/sheets", async (request, reply) => {
-    const sheet = request.body.sheet;
-    const range = request.body.ranges;
+    const sheet = "DailyTrack";
+    const range = "A2:Z2000";
     const values = request.body.values;
 
     googleSheets.spreadsheets.values.batchUpdate({
       spreadsheetId: BODY_SHEET_ID,
       auth: auth,
       requestBody: {
-        data: [{ range: `${sheet}!${range}`, values: [values] }],
+        data: [
+          {
+            range: `${sheet}!${range}`,
+            values: values,
+          },
+        ],
         valueInputOption: "USER_ENTERED",
       },
     });
