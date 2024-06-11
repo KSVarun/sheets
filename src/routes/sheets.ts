@@ -29,7 +29,7 @@ export async function sheets(fastify) {
     return { result };
   });
 
-  fastify.put("/sheets", async (request, reply) => {
+  fastify.put("/sheets", async (request) => {
     const sheet = "DailyTrack";
     const range = "A2:Z2000";
     const values = request.body.values;
