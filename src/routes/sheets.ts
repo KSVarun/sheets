@@ -4,11 +4,16 @@ import {
   DEFAULT_RANGE,
 } from "../constants/sheetUsageMap.js";
 import { IResult } from "../types/global.js";
-import { googleSheets, auth, formatData } from "../utils/global.js";
+import {
+  googleSheets,
+  auth,
+  formatData,
+  getRowNumberToUpdate,
+} from "../utils/global.js";
 
 export async function sheets(fastify) {
   fastify.get("/sheets", async (request, reply) => {
-    const rows = await googleSheets.spreadsheets.values.batchGet({
+    const sheetData = await googleSheets.spreadsheets.values.batchGet({
       spreadsheetId: BODY_SHEET_ID,
       ranges: [DEFAULT_RANGE, CONFIGURATIONS_RANGE],
       auth: auth,
@@ -19,8 +24,9 @@ export async function sheets(fastify) {
       track: {},
       configurations: {},
     };
-    const trackerData: string[][] = rows.data.valueRanges[0].values;
-    const configurations: string[][] = rows.data.valueRanges[1].values;
+
+    const trackerData: string[][] = sheetData.data.valueRanges[0].values;
+    const configurations: string[][] = sheetData.data.valueRanges[1].values;
     const dates: string[] = trackerData[0];
     const configKeys: string[] = configurations[0];
     formatData(result, trackerData, dates, "track");
@@ -31,7 +37,16 @@ export async function sheets(fastify) {
 
   fastify.put("/sheets", async (request) => {
     const sheet = "DailyTrack";
-    const range = "A2:Z2000";
+
+    const sheetData = await googleSheets.spreadsheets.values.batchGet({
+      spreadsheetId: BODY_SHEET_ID,
+      ranges: [DEFAULT_RANGE, CONFIGURATIONS_RANGE],
+      auth: auth,
+      majorDimension: "COLUMNS",
+    });
+    const dateRow = sheetData.data.valueRanges[0].values[0];
+    const row = getRowNumberToUpdate(dateRow, request.body.values[0]);
+    const range = `A${row}:Z2000`;
     const values = request.body.values;
 
     googleSheets.spreadsheets.values.batchUpdate({
@@ -41,7 +56,7 @@ export async function sheets(fastify) {
         data: [
           {
             range: `${sheet}!${range}`,
-            values: values,
+            values: [values],
           },
         ],
         valueInputOption: "USER_ENTERED",

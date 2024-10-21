@@ -24,3 +24,14 @@ export function formatData(
     }
   }
 }
+
+export function getRowNumberToUpdate(
+  dateRowData: string[],
+  currentDate: string
+) {
+  const dateIndex = dateRowData.findIndex((date) => date === currentDate);
+  if (dateIndex > 0) {
+    return dateIndex + 1;
+  }
+  return dateRowData.length;
+}
